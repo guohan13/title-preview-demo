@@ -1,0 +1,316 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover" />
+  <title>手机预览</title>
+  <style>
+    :root {
+      color-scheme: light;
+      --bg: #eef0f3;
+      --text: #1f2329;
+      --subtle: #8f959e;
+    }
+
+    * {
+      box-sizing: border-box;
+    }
+
+    body {
+      margin: 0;
+      min-height: 100vh;
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+      background: var(--bg);
+      color: var(--text);
+    }
+
+    .mobile-shell {
+      min-height: 100vh;
+      display: flex;
+      justify-content: center;
+      padding: 0;
+    }
+
+    .phone-page {
+      width: 100%;
+      max-width: 402px;
+      min-height: 100vh;
+      background: #fff;
+      overflow: hidden;
+    }
+
+    .section-image {
+      display: block;
+      width: 100%;
+      height: auto;
+    }
+
+    .title-section {
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      gap: 10px;
+      padding: 16px 10px 12px;
+      background: #fff;
+      cursor: text;
+    }
+
+    .page-title {
+      width: calc(100% - 20px);
+      max-width: 362px;
+      margin: 0;
+      color: #1f2329;
+      font-family: "PingFang SC", -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+      font-size: 32px;
+      font-weight: 500;
+      line-height: 48px;
+      white-space: pre-wrap;
+      overflow-wrap: anywhere;
+      word-break: break-word;
+      caret-color: #1456f0;
+      outline: none;
+      cursor: text;
+    }
+
+    .status-chip {
+      position: fixed;
+      right: 12px;
+      bottom: 12px;
+      padding: 6px 10px;
+      border-radius: 999px;
+      background: rgba(31, 35, 41, 0.72);
+      color: #fff;
+      font-size: 12px;
+      line-height: 18px;
+      backdrop-filter: blur(8px);
+    }
+
+    .status-chip.is-idle {
+      background: rgba(143, 149, 158, 0.85);
+    }
+  </style>
+</head>
+<body>
+  <main class="mobile-shell">
+    <section class="phone-page" aria-label="手机预览页面">
+      <img class="section-image" src="./assets/header.png" alt="header" />
+      <section class="title-section" aria-label="title">
+        <h1
+          class="page-title"
+          id="page-title"
+          contenteditable="plaintext-only"
+          spellcheck="false"
+        >智能纪要：文档编辑及环境配置问题讨论 2026年5月13日</h1>
+      </section>
+      <img class="section-image" src="./assets/main_content.png" alt="main content" />
+    </section>
+  </main>
+  <div class="status-chip is-idle" id="sync-status">等待控制台同步</div>
+
+  <script>
+    const pageTitle = document.getElementById("page-title");
+    const titleSection = document.querySelector(".title-section");
+    const syncStatus = document.getElementById("sync-status");
+    const STATE_ENDPOINT = "/api/state";
+    let lastUpdatedAt = 0;
+    let currentState = null;
+    let isEditingTitle = false;
+    let isComposingTitle = false;
+    let syncTimer = null;
+    const FONT_PRESETS = {
+      "34-48": { fontSize: 34, lineHeight: 48 },
+      "32-48": { fontSize: 32, lineHeight: 48 },
+      "28-40": { fontSize: 28, lineHeight: 40 },
+      "26-37": { fontSize: 26, lineHeight: 37 },
+      "22-30": { fontSize: 22, lineHeight: 30 },
+      "20-28": { fontSize: 20, lineHeight: 28 },
+      "18-25": { fontSize: 18, lineHeight: 25 },
+      "16-22": { fontSize: 16, lineHeight: 22 }
+    };
+
+    function normalizeTitleText(text) {
+      return text.replace(/\r\n/g, "\n").replace(/\u00a0/g, " ");
+    }
+
+    function getVisibleCharCount(text) {
+      return normalizeTitleText(text).replace(/\n/g, "").length;
+    }
+
+    function getCustomLineHeight(fontSize) {
+      const matchedPreset = Object.values(FONT_PRESETS).find((item) => item.fontSize === fontSize);
+      if (matchedPreset) {
+        return matchedPreset.lineHeight;
+      }
+      return Math.round(fontSize * 1.4);
+    }
+
+    function getFontPreset(selectionValue, customFontSize, fallbackKey) {
+      if (selectionValue === "custom") {
+        const fontSize = Math.max(1, Math.round(Number(customFontSize) || 1));
+        return {
+          fontSize,
+          lineHeight: getCustomLineHeight(fontSize)
+        };
+      }
+
+      return FONT_PRESETS[selectionValue] || FONT_PRESETS[fallbackKey];
+    }
+
+    function applyTitlePreset(preset) {
+      pageTitle.style.fontSize = preset.fontSize + "px";
+      pageTitle.style.lineHeight = preset.lineHeight + "px";
+      return preset.lineHeight;
+    }
+
+    function measureLines(preset) {
+      const lineHeight = applyTitlePreset(preset);
+      return Math.max(1, Math.round(pageTitle.scrollHeight / lineHeight));
+    }
+
+    function getAppliedPresetFromState(state, titleText) {
+      const fontSelections = state.fontSelections || {};
+      const basePreset = getFontPreset(fontSelections.base || "32-48", fontSelections.baseCustom, "32-48");
+      const midPreset = getFontPreset(fontSelections.mid || "28-40", fontSelections.midCustom, "28-40");
+      const minPreset = getFontPreset(fontSelections.min || "22-30", fontSelections.minCustom, "22-30");
+      const mode = state.mode || "char";
+      const maxShrinkLevels = Number(state.maxShrinkLevels) || 0;
+      const thresholds = state.thresholds || {};
+
+      if (maxShrinkLevels === 0) {
+        return basePreset;
+      }
+
+      if (mode === "char") {
+        const totalChars = getVisibleCharCount(titleText);
+        const firstThreshold = Number(thresholds.first) || 30;
+        const secondThreshold = Number(thresholds.second) || 50;
+
+        if (maxShrinkLevels >= 2 && totalChars > secondThreshold) {
+          return minPreset;
+        }
+
+        if (maxShrinkLevels >= 1 && totalChars > firstThreshold) {
+          return midPreset;
+        }
+
+        return basePreset;
+      }
+
+      const firstThreshold = Number(thresholds.first) || 3;
+      const secondThreshold = Number(thresholds.second) || 5;
+      let appliedPreset = basePreset;
+      const baseLines = measureLines(basePreset);
+
+      if (maxShrinkLevels >= 1 && baseLines > firstThreshold) {
+        appliedPreset = midPreset;
+      }
+
+      const currentLines = measureLines(appliedPreset);
+      if (maxShrinkLevels >= 2 && appliedPreset === midPreset && currentLines > secondThreshold) {
+        appliedPreset = minPreset;
+      }
+
+      return appliedPreset;
+    }
+
+    function applyState(state) {
+      if (!state || !state.appliedPreset) {
+        return;
+      }
+
+      currentState = state;
+      if (isEditingTitle) {
+        return;
+      }
+
+      pageTitle.textContent = state.titleText || "";
+      applyTitlePreset(state.appliedPreset);
+      lastUpdatedAt = state.updatedAt || Date.now();
+      syncStatus.textContent = "已同步";
+      syncStatus.classList.remove("is-idle");
+    }
+
+    async function fetchState() {
+      try {
+        const response = await fetch(STATE_ENDPOINT, { cache: "no-store" });
+        if (!response.ok) {
+          throw new Error("fetch state failed");
+        }
+
+        const state = await response.json();
+        applyState(state);
+      } catch (error) {
+        if (!lastUpdatedAt) {
+          syncStatus.textContent = "等待控制台同步";
+          syncStatus.classList.add("is-idle");
+        }
+      }
+    }
+
+    function queueStateSync() {
+      if (!currentState || !currentState.appliedPreset) {
+        return;
+      }
+
+      currentState = {
+        ...currentState,
+        titleText: normalizeTitleText(pageTitle.innerText || ""),
+        appliedPreset: getAppliedPresetFromState(currentState, pageTitle.innerText || ""),
+        updatedAt: Date.now()
+      };
+      applyTitlePreset(currentState.appliedPreset);
+      lastUpdatedAt = currentState.updatedAt;
+      syncStatus.textContent = "同步中";
+      syncStatus.classList.remove("is-idle");
+
+      window.clearTimeout(syncTimer);
+      syncTimer = window.setTimeout(() => {
+        fetch(STATE_ENDPOINT, {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify(currentState)
+        })
+          .then(() => {
+            syncStatus.textContent = "已同步";
+          })
+          .catch(() => {
+            syncStatus.textContent = "同步失败";
+          });
+      }, 120);
+    }
+
+    titleSection.addEventListener("click", () => {
+      pageTitle.focus();
+    });
+
+    pageTitle.addEventListener("focus", () => {
+      isEditingTitle = true;
+      syncStatus.textContent = "正在编辑";
+      syncStatus.classList.remove("is-idle");
+    });
+
+    pageTitle.addEventListener("blur", () => {
+      isEditingTitle = false;
+      isComposingTitle = false;
+      queueStateSync();
+    });
+
+    pageTitle.addEventListener("input", (event) => {
+      if (isComposingTitle || event.isComposing) {
+        return;
+      }
+      queueStateSync();
+    });
+    pageTitle.addEventListener("compositionstart", () => {
+      isComposingTitle = true;
+    });
+    pageTitle.addEventListener("compositionend", () => {
+      isComposingTitle = false;
+      queueStateSync();
+    });
+
+    fetchState();
+    window.setInterval(fetchState, 700);
+  </script>
+</body>
+</html>

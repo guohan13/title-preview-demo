@@ -1,0 +1,14 @@
+services:
+  - type: web
+    name: title-preview-demo
+    runtime: docker
+    plan: free
+    autoDeploy: true
+    healthCheckPath: /healthz
+    envVars:
+      - key: PREVIEW_HOST
+        value: 0.0.0.0
+      - key: PREVIEW_PORT
+        value: 8000
+      - key: PUBLIC_BASE_URL
+        sync: false

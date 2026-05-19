@@ -1,0 +1,1218 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>文档标题适配</title>
+  <style>
+    :root {
+      color-scheme: light;
+      --panel-bg: #ffffff;
+      --page-bg: #f5f6f7;
+      --text-main: #1f2329;
+      --text-secondary: #646a73;
+      --border-color: #d9dce1;
+      --accent: #1456f0;
+      --card-shadow: 0 12px 32px rgba(31, 35, 41, 0.12);
+      --preview-scale: 1;
+    }
+
+    * {
+      box-sizing: border-box;
+    }
+
+    [hidden] {
+      display: none !important;
+    }
+
+    body {
+      margin: 0;
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+      background: var(--page-bg);
+      color: var(--text-main);
+    }
+
+    .workspace {
+      min-height: 100vh;
+      display: grid;
+      grid-template-columns: minmax(300px, 360px) minmax(460px, 1fr);
+      gap: 24px;
+      padding: 24px;
+    }
+
+    .control-panel {
+      align-self: start;
+      display: flex;
+      flex-direction: column;
+      gap: 20px;
+      padding: 20px;
+      background: var(--panel-bg);
+      border-radius: 20px;
+      box-shadow: 0 10px 24px rgba(31, 35, 41, 0.08);
+    }
+
+    .panel-title {
+      margin: 0;
+      font-size: 24px;
+      line-height: 32px;
+    }
+
+    .panel-header {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 12px;
+    }
+
+    .panel-action-button,
+    .qr-copy-button,
+    .qr-link {
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      height: 40px;
+      padding: 0 14px;
+      border-radius: 12px;
+      border: 1px solid var(--border-color);
+      background: #fff;
+      color: var(--text-main);
+      font: inherit;
+      text-decoration: none;
+      cursor: pointer;
+    }
+
+    .panel-action-button {
+      background: #1456f0;
+      border-color: #1456f0;
+      color: #fff;
+      white-space: nowrap;
+    }
+
+    .control-group {
+      display: grid;
+      gap: 12px;
+      padding-top: 4px;
+    }
+
+    .control-group-title {
+      margin: 0;
+      font-size: 16px;
+      line-height: 24px;
+    }
+
+    .field {
+      display: grid;
+      gap: 8px;
+    }
+
+    .field-label {
+      font-size: 14px;
+      line-height: 22px;
+      color: var(--text-secondary);
+    }
+
+    .text-input,
+    .number-input,
+    .select-input,
+    .custom-select-trigger {
+      width: 100%;
+      border: 1px solid var(--border-color);
+      border-radius: 12px;
+      background: #fff;
+      color: var(--text-main);
+      font: inherit;
+    }
+
+    .text-input {
+      min-height: 120px;
+      padding: 12px 14px;
+      resize: vertical;
+      line-height: 22px;
+    }
+
+    .number-grid {
+      display: grid;
+      grid-template-columns: repeat(2, minmax(0, 1fr));
+      gap: 12px;
+    }
+
+    .number-input {
+      height: 44px;
+      padding: 0 12px;
+    }
+
+    .select-input {
+      height: 44px;
+      padding: 0 12px;
+      appearance: none;
+      background-image:
+        linear-gradient(45deg, transparent 50%, #8f959e 50%),
+        linear-gradient(135deg, #8f959e 50%, transparent 50%);
+      background-position:
+        calc(100% - 18px) calc(50% - 2px),
+        calc(100% - 12px) calc(50% - 2px);
+      background-size: 6px 6px, 6px 6px;
+      background-repeat: no-repeat;
+    }
+
+    .select-input:disabled {
+      background-color: #f2f3f5;
+      color: #8f959e;
+      border-color: #e6e8eb;
+      cursor: not-allowed;
+    }
+
+    .custom-select {
+      position: relative;
+    }
+
+    .custom-select[open] {
+      z-index: 2;
+    }
+
+    .custom-select-trigger {
+      position: relative;
+      height: 44px;
+      padding: 0 36px 0 12px;
+      display: flex;
+      align-items: center;
+      list-style: none;
+      cursor: pointer;
+      user-select: none;
+    }
+
+    .custom-select-trigger::-webkit-details-marker {
+      display: none;
+    }
+
+    .custom-select-trigger::after {
+      content: "";
+      position: absolute;
+      right: 14px;
+      top: 50%;
+      width: 8px;
+      height: 8px;
+      border-right: 1.5px solid #8f959e;
+      border-bottom: 1.5px solid #8f959e;
+      transform: translateY(-60%) rotate(45deg);
+      transition: transform 0.16s ease;
+    }
+
+    .custom-select[open] .custom-select-trigger::after {
+      transform: translateY(-30%) rotate(-135deg);
+    }
+
+    .custom-select-value {
+      min-width: 0;
+      overflow: hidden;
+      text-overflow: ellipsis;
+      white-space: nowrap;
+    }
+
+    .custom-select-menu {
+      position: absolute;
+      top: calc(100% + 8px);
+      left: 0;
+      right: 0;
+      display: grid;
+      gap: 4px;
+      padding: 8px;
+      border: 1px solid var(--border-color);
+      border-radius: 14px;
+      background: #fff;
+      box-shadow: 0 12px 24px rgba(31, 35, 41, 0.12);
+    }
+
+    .custom-select-option {
+      width: 100%;
+      display: grid;
+      grid-template-columns: minmax(0, 1fr) auto;
+      gap: 12px;
+      align-items: center;
+      padding: 10px 12px;
+      border: 0;
+      border-radius: 10px;
+      background: transparent;
+      color: var(--text-main);
+      font: inherit;
+      text-align: left;
+      cursor: pointer;
+    }
+
+    .custom-select-option:hover,
+    .custom-select-option.is-selected {
+      background: #eef3ff;
+    }
+
+    .custom-option-main {
+      min-width: 0;
+      overflow: hidden;
+      text-overflow: ellipsis;
+      white-space: nowrap;
+    }
+
+    .custom-option-meta {
+      color: #8f959e;
+      font-size: 14px;
+      line-height: 22px;
+      white-space: nowrap;
+    }
+
+    .tab-list {
+      display: grid;
+      grid-template-columns: repeat(2, minmax(0, 1fr));
+      width: 100%;
+      padding: 4px;
+      border-radius: 14px;
+      background: #f2f3f5;
+      gap: 4px;
+    }
+
+    .tab-option {
+      position: relative;
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      width: 100%;
+      padding: 10px 16px;
+      border-radius: 10px;
+      color: var(--text-secondary);
+      font-size: 14px;
+      line-height: 22px;
+      font-weight: 500;
+      cursor: pointer;
+    }
+
+    .tab-option input {
+      position: absolute;
+      inset: 0;
+      opacity: 0;
+      pointer-events: none;
+    }
+
+    .tab-option.active {
+      background: #fff;
+      color: var(--text-main);
+      box-shadow: 0 1px 2px rgba(31, 35, 41, 0.08);
+    }
+
+    .mode-panel[hidden] {
+      display: none;
+    }
+
+    .slider-block {
+      display: grid;
+      gap: 10px;
+    }
+
+    .slider-row {
+      display: grid;
+      grid-template-columns: 1fr auto;
+      gap: 12px;
+      align-items: center;
+    }
+
+    .slider-input {
+      width: 100%;
+      accent-color: var(--accent);
+    }
+
+    .slider-value {
+      min-width: 44px;
+      color: var(--text-main);
+      font-size: 14px;
+      line-height: 22px;
+      font-weight: 500;
+      text-align: right;
+    }
+
+    .font-preset-grid {
+      display: grid;
+      gap: 12px;
+    }
+
+    .font-preset-grid.two-columns {
+      grid-template-columns: repeat(2, minmax(0, 1fr));
+    }
+
+    .font-level-panel[hidden] {
+      display: none;
+    }
+
+    .custom-font-panel {
+      display: grid;
+      gap: 8px;
+      margin-top: 8px;
+      padding: 10px 12px;
+      border: 1px solid #e6e8eb;
+      border-radius: 12px;
+      background: #f7f8fa;
+    }
+
+    .custom-font-panel[hidden] {
+      display: none;
+    }
+
+    .custom-font-row {
+      display: grid;
+      grid-template-columns: minmax(0, 1fr) auto;
+      gap: 12px;
+      align-items: center;
+    }
+
+    .custom-font-input {
+      width: 88px;
+    }
+
+    .custom-font-hint {
+      color: var(--text-secondary);
+      font-size: 12px;
+      line-height: 18px;
+    }
+
+    .qr-modal {
+      position: fixed;
+      inset: 0;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      padding: 24px;
+      background: rgba(15, 23, 42, 0.36);
+      opacity: 0;
+      pointer-events: none;
+      transition: opacity 0.18s ease;
+      z-index: 10;
+    }
+
+    .qr-modal.is-open {
+      opacity: 1;
+      pointer-events: auto;
+    }
+
+    .qr-dialog {
+      width: min(100%, 360px);
+      display: grid;
+      gap: 16px;
+      padding: 20px;
+      border-radius: 20px;
+      background: #fff;
+      box-shadow: 0 20px 48px rgba(31, 35, 41, 0.2);
+    }
+
+    .qr-dialog-header {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 12px;
+    }
+
+    .qr-dialog-title {
+      margin: 0;
+      font-size: 18px;
+      line-height: 26px;
+    }
+
+    .qr-close-button {
+      border: 0;
+      background: transparent;
+      color: var(--text-secondary);
+      font: inherit;
+      cursor: pointer;
+    }
+
+    .qr-body {
+      display: grid;
+      gap: 12px;
+      justify-items: center;
+      text-align: center;
+    }
+
+    .qr-image {
+      width: 240px;
+      height: 240px;
+      border-radius: 16px;
+      border: 1px solid #e6e8eb;
+      background: #fff;
+      object-fit: cover;
+    }
+
+    .qr-status {
+      color: var(--text-secondary);
+      font-size: 14px;
+      line-height: 22px;
+    }
+
+    .qr-url {
+      width: 100%;
+      padding: 10px 12px;
+      border-radius: 12px;
+      background: #f7f8fa;
+      color: var(--text-main);
+      font-size: 13px;
+      line-height: 20px;
+      word-break: break-all;
+      text-align: left;
+    }
+
+    .qr-actions {
+      width: 100%;
+      display: grid;
+      grid-template-columns: repeat(2, minmax(0, 1fr));
+      gap: 12px;
+    }
+
+    .qr-copy-button.is-success {
+      color: #1456f0;
+      border-color: rgba(20, 86, 240, 0.28);
+      background: rgba(20, 86, 240, 0.06);
+    }
+
+    .preview-area {
+      min-width: 0;
+      display: flex;
+      align-items: flex-start;
+      justify-content: center;
+      padding: 8px 0 24px;
+      overflow: auto;
+    }
+
+    .preview-stage {
+      min-width: 430px;
+      display: flex;
+      justify-content: center;
+      padding: 16px;
+    }
+
+    .phone-frame {
+      width: 402px;
+      min-width: 402px;
+      background: #fff;
+      border-radius: 20px;
+      overflow: hidden;
+      box-shadow: var(--card-shadow);
+      transform: scale(var(--preview-scale));
+      transform-origin: top center;
+    }
+
+    .title-section {
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      gap: 10px;
+      padding: 16px 10px 12px;
+      background: #fff;
+      cursor: text;
+    }
+
+    .page-title {
+      width: 362px;
+      min-height: 48px;
+      margin: 0;
+      color: #1f2329;
+      font-family: "PingFang SC", -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+      font-size: 32px;
+      font-weight: 500;
+      line-height: 48px;
+      letter-spacing: 0;
+      white-space: pre-wrap;
+      overflow-wrap: anywhere;
+      word-break: break-word;
+      caret-color: #1456f0;
+      outline: none;
+      cursor: text;
+    }
+
+    .page-title:empty::before {
+      content: attr(data-placeholder);
+      color: #8f959e;
+    }
+
+    .section-image {
+      display: block;
+      width: 100%;
+      height: auto;
+    }
+
+    @media (max-width: 1080px) {
+      .workspace {
+        grid-template-columns: 1fr;
+      }
+
+      .preview-area {
+        justify-content: stretch;
+      }
+
+      .preview-stage {
+        min-width: 0;
+      }
+    }
+  </style>
+</head>
+<body>
+  <main class="workspace">
+    <aside class="control-panel" aria-label="标题适配控制面板">
+      <header class="panel-header">
+        <h1 class="panel-title">控制面板</h1>
+        <button class="panel-action-button" id="mobile-preview-button" type="button">手机预览</button>
+      </header>
+
+      <section class="control-group" aria-label="控制方式">
+        <div class="tab-list" role="tablist" aria-label="控制方式切换">
+          <label class="tab-option active" id="tab-char" role="tab" aria-selected="true">
+            <input type="radio" name="control-mode" value="char" checked />
+            <span>按字数控制</span>
+          </label>
+          <label class="tab-option" id="tab-line" role="tab" aria-selected="false">
+            <input type="radio" name="control-mode" value="line" />
+            <span>按行数控制</span>
+          </label>
+        </div>
+      </section>
+
+      <section class="control-group" aria-labelledby="font-heading">
+        <h2 class="control-group-title" id="font-heading">可缩小档位</h2>
+        <div class="slider-block">
+          <label class="field">
+            <div class="slider-row">
+              <input class="slider-input" id="shrink-levels" type="range" min="0" max="2" step="1" value="1" />
+              <span class="slider-value" id="shrink-levels-value">1档</span>
+            </div>
+          </label>
+        </div>
+        <div class="font-preset-grid">
+          <label class="field">
+            <span class="field-label">默认字号</span>
+            <details class="custom-select" id="font-size-base" data-value="32-48">
+              <summary class="custom-select-trigger">
+                <span class="custom-select-value">默认字号 32</span>
+              </summary>
+              <div class="custom-select-menu">
+                <button class="custom-select-option" type="button" data-value="34-48" data-summary="大标题 34">
+                  <span class="custom-option-main">大标题 34 Medium</span>
+                  <span class="custom-option-meta">34/48</span>
+                </button>
+                <button class="custom-select-option is-selected" type="button" data-value="32-48" data-summary="默认字号 32">
+                  <span class="custom-option-main">默认字号 32 Medium</span>
+                  <span class="custom-option-meta">32/48</span>
+                </button>
+                <button class="custom-select-option" type="button" data-value="26-37" data-summary="一级标题 26">
+                  <span class="custom-option-main">一级标题 26 Medium</span>
+                  <span class="custom-option-meta">26/37</span>
+                </button>
+                <button class="custom-select-option" type="button" data-value="22-30" data-summary="二级标题 22">
+                  <span class="custom-option-main">二级标题 22 Medium</span>
+                  <span class="custom-option-meta">22/30</span>
+                </button>
+                <button class="custom-select-option" type="button" data-value="20-28" data-summary="三级标题 20">
+                  <span class="custom-option-main">三级标题 20 Medium</span>
+                  <span class="custom-option-meta">20/28</span>
+                </button>
+                <button class="custom-select-option" type="button" data-value="18-25" data-summary="四级标题 18">
+                  <span class="custom-option-main">四级标题 18 Medium</span>
+                  <span class="custom-option-meta">18/25</span>
+                </button>
+                <button class="custom-select-option" type="button" data-value="16-22" data-summary="五级标题 16">
+                  <span class="custom-option-main">五级标题 16 Medium</span>
+                  <span class="custom-option-meta">16/22</span>
+                </button>
+                <button class="custom-select-option" type="button" data-value="custom" data-summary="自定义">
+                  <span class="custom-option-main">自定义字号</span>
+                  <span class="custom-option-meta">自动行高</span>
+                </button>
+              </div>
+            </details>
+            <div class="custom-font-panel" id="font-size-base-custom-panel" hidden>
+              <div class="custom-font-row">
+                <span class="field-label">字号</span>
+                <input class="number-input custom-font-input" id="font-size-base-custom-input" type="number" min="1" step="1" value="32" />
+              </div>
+              <div class="custom-font-hint" id="font-size-base-custom-hint">自动行高：48px</div>
+            </div>
+          </label>
+        </div>
+        <div class="font-preset-grid two-columns">
+          <label class="field font-level-panel" id="font-level-1-panel">
+            <span class="field-label">中字号</span>
+            <details class="custom-select" id="font-size-mid" data-value="28-40">
+              <summary class="custom-select-trigger">
+                <span class="custom-select-value">中字号 28</span>
+              </summary>
+              <div class="custom-select-menu">
+                <button class="custom-select-option" type="button" data-value="34-48" data-summary="大标题 34">
+                  <span class="custom-option-main">大标题 34 Medium</span>
+                  <span class="custom-option-meta">34/48</span>
+                </button>
+                <button class="custom-select-option is-selected" type="button" data-value="28-40" data-summary="中字号 28">
+                  <span class="custom-option-main">中字号 28 Medium</span>
+                  <span class="custom-option-meta">28/40</span>
+                </button>
+                <button class="custom-select-option" type="button" data-value="26-37" data-summary="一级标题 26">
+                  <span class="custom-option-main">一级标题 26 Medium</span>
+                  <span class="custom-option-meta">26/37</span>
+                </button>
+                <button class="custom-select-option" type="button" data-value="22-30" data-summary="二级标题 22">
+                  <span class="custom-option-main">二级标题 22 Medium</span>
+                  <span class="custom-option-meta">22/30</span>
+                </button>
+                <button class="custom-select-option" type="button" data-value="20-28" data-summary="三级标题 20">
+                  <span class="custom-option-main">三级标题 20 Medium</span>
+                  <span class="custom-option-meta">20/28</span>
+                </button>
+                <button class="custom-select-option" type="button" data-value="18-25" data-summary="四级标题 18">
+                  <span class="custom-option-main">四级标题 18 Medium</span>
+                  <span class="custom-option-meta">18/25</span>
+                </button>
+                <button class="custom-select-option" type="button" data-value="16-22" data-summary="五级标题 16">
+                  <span class="custom-option-main">五级标题 16 Medium</span>
+                  <span class="custom-option-meta">16/22</span>
+                </button>
+                <button class="custom-select-option" type="button" data-value="custom" data-summary="自定义">
+                  <span class="custom-option-main">自定义字号</span>
+                  <span class="custom-option-meta">自动行高</span>
+                </button>
+              </div>
+            </details>
+            <div class="custom-font-panel" id="font-size-mid-custom-panel" hidden>
+              <div class="custom-font-row">
+                <span class="field-label">字号</span>
+                <input class="number-input custom-font-input" id="font-size-mid-custom-input" type="number" min="1" step="1" value="28" />
+              </div>
+              <div class="custom-font-hint" id="font-size-mid-custom-hint">自动行高：40px</div>
+            </div>
+          </label>
+          <label class="field font-level-panel" id="font-level-2-panel">
+            <span class="field-label">小字号</span>
+            <details class="custom-select" id="font-size-min" data-value="22-30">
+              <summary class="custom-select-trigger">
+                <span class="custom-select-value">二级标题 22</span>
+              </summary>
+              <div class="custom-select-menu">
+                <button class="custom-select-option" type="button" data-value="34-48" data-summary="大标题 34">
+                  <span class="custom-option-main">大标题 34 Medium</span>
+                  <span class="custom-option-meta">34/48</span>
+                </button>
+                <button class="custom-select-option" type="button" data-value="26-37" data-summary="一级标题 26">
+                  <span class="custom-option-main">一级标题 26 Medium</span>
+                  <span class="custom-option-meta">26/37</span>
+                </button>
+                <button class="custom-select-option is-selected" type="button" data-value="22-30" data-summary="二级标题 22">
+                  <span class="custom-option-main">二级标题 22 Medium</span>
+                  <span class="custom-option-meta">22/30</span>
+                </button>
+                <button class="custom-select-option" type="button" data-value="20-28" data-summary="三级标题 20">
+                  <span class="custom-option-main">三级标题 20 Medium</span>
+                  <span class="custom-option-meta">20/28</span>
+                </button>
+                <button class="custom-select-option" type="button" data-value="18-25" data-summary="四级标题 18">
+                  <span class="custom-option-main">四级标题 18 Medium</span>
+                  <span class="custom-option-meta">18/25</span>
+                </button>
+                <button class="custom-select-option" type="button" data-value="16-22" data-summary="五级标题 16">
+                  <span class="custom-option-main">五级标题 16 Medium</span>
+                  <span class="custom-option-meta">16/22</span>
+                </button>
+                <button class="custom-select-option" type="button" data-value="custom" data-summary="自定义">
+                  <span class="custom-option-main">自定义字号</span>
+                  <span class="custom-option-meta">自动行高</span>
+                </button>
+              </div>
+            </details>
+            <div class="custom-font-panel" id="font-size-min-custom-panel" hidden>
+              <div class="custom-font-row">
+                <span class="field-label">字号</span>
+                <input class="number-input custom-font-input" id="font-size-min-custom-input" type="number" min="1" step="1" value="19" />
+              </div>
+              <div class="custom-font-hint" id="font-size-min-custom-hint">自动行高：27px</div>
+            </div>
+          </label>
+        </div>
+      </section>
+
+      <section class="control-group mode-panel" id="panel-char" aria-label="字数阈值">
+        <div class="number-grid">
+          <label class="field">
+            <span class="field-label">超过字数切中字号</span>
+            <input class="number-input" id="char-threshold-1" type="number" min="1" value="20" />
+          </label>
+          <label class="field">
+            <span class="field-label">超过字数切小字号</span>
+            <input class="number-input" id="char-threshold-2" type="number" min="1" value="50" />
+          </label>
+        </div>
+      </section>
+
+      <section class="control-group mode-panel" id="panel-line" aria-label="行数阈值" hidden>
+        <div class="number-grid">
+          <label class="field">
+            <span class="field-label">超过行数切中字号</span>
+            <input class="number-input" id="line-threshold-1" type="number" min="1" value="3" />
+          </label>
+          <label class="field">
+            <span class="field-label">超过行数切小字号</span>
+            <input class="number-input" id="line-threshold-2" type="number" min="1" value="5" />
+          </label>
+        </div>
+      </section>
+    </aside>
+
+    <section class="preview-area" aria-label="预览区域">
+      <div class="preview-stage">
+        <section class="phone-frame" aria-label="Figma UI 还原">
+          <img class="section-image" src="./assets/header.png" alt="header" />
+          <section class="title-section" aria-label="title">
+            <h1
+              class="page-title"
+              id="page-title"
+              contenteditable="plaintext-only"
+              spellcheck="false"
+              data-placeholder="点击这里编辑标题"
+            >智能纪要：文档编辑及环境配置问题讨论 2026年5月13日</h1>
+          </section>
+          <img class="section-image" src="./assets/main_content.png" alt="main content" />
+        </section>
+      </div>
+    </section>
+  </main>
+
+  <div class="qr-modal" id="qr-modal" hidden>
+    <section class="qr-dialog" role="dialog" aria-modal="true" aria-labelledby="qr-dialog-title">
+      <div class="qr-dialog-header">
+        <h2 class="qr-dialog-title" id="qr-dialog-title">手机预览</h2>
+        <button class="qr-close-button" id="qr-close-button" type="button">关闭</button>
+      </div>
+      <div class="qr-body">
+        <img class="qr-image" id="qr-image" alt="手机预览二维码" hidden />
+        <div class="qr-status" id="qr-status">正在生成二维码...</div>
+        <div class="qr-url" id="qr-url">正在获取手机预览地址...</div>
+        <div class="qr-actions">
+          <button class="qr-copy-button" id="qr-copy-button" type="button">复制链接</button>
+          <a class="qr-link" id="qr-link" href="./mobile-preview.html" target="_blank" rel="noreferrer">打开预览页</a>
+        </div>
+      </div>
+    </section>
+  </div>
+
+  <script>
+    const FONT_PRESETS = {
+      "34-48": { fontSize: 34, lineHeight: 48 },
+      "32-48": { fontSize: 32, lineHeight: 48 },
+      "28-40": { fontSize: 28, lineHeight: 40 },
+      "26-37": { fontSize: 26, lineHeight: 37 },
+      "22-30": { fontSize: 22, lineHeight: 30 },
+      "20-28": { fontSize: 20, lineHeight: 28 },
+      "18-25": { fontSize: 18, lineHeight: 25 },
+      "16-22": { fontSize: 16, lineHeight: 22 }
+    };
+
+    const SHRINK_LEVEL_LABELS = ["不变", "1档", "2档"];
+
+    const pageTitle = document.getElementById("page-title");
+
+    const modeInputs = document.querySelectorAll('input[name="control-mode"]');
+    const tabChar = document.getElementById("tab-char");
+    const tabLine = document.getElementById("tab-line");
+    const panelChar = document.getElementById("panel-char");
+    const panelLine = document.getElementById("panel-line");
+    const shrinkLevels = document.getElementById("shrink-levels");
+    const shrinkLevelsValue = document.getElementById("shrink-levels-value");
+    const fontLevel1Panel = document.getElementById("font-level-1-panel");
+    const fontLevel2Panel = document.getElementById("font-level-2-panel");
+    const charThreshold1 = document.getElementById("char-threshold-1");
+    const charThreshold2 = document.getElementById("char-threshold-2");
+    const lineThreshold1 = document.getElementById("line-threshold-1");
+    const lineThreshold2 = document.getElementById("line-threshold-2");
+    const fontSizeBase = document.getElementById("font-size-base");
+    const fontSizeMid = document.getElementById("font-size-mid");
+    const fontSizeMin = document.getElementById("font-size-min");
+    const fontSizeBaseCustomPanel = document.getElementById("font-size-base-custom-panel");
+    const fontSizeMidCustomPanel = document.getElementById("font-size-mid-custom-panel");
+    const fontSizeMinCustomPanel = document.getElementById("font-size-min-custom-panel");
+    const fontSizeBaseCustomInput = document.getElementById("font-size-base-custom-input");
+    const fontSizeMidCustomInput = document.getElementById("font-size-mid-custom-input");
+    const fontSizeMinCustomInput = document.getElementById("font-size-min-custom-input");
+    const fontSizeBaseCustomHint = document.getElementById("font-size-base-custom-hint");
+    const fontSizeMidCustomHint = document.getElementById("font-size-mid-custom-hint");
+    const fontSizeMinCustomHint = document.getElementById("font-size-min-custom-hint");
+    const STATE_ENDPOINT = "/api/state";
+    const MOBILE_PREVIEW_URL_ENDPOINT = "/api/mobile-preview-url";
+    const mobilePreviewButton = document.getElementById("mobile-preview-button");
+    const qrModal = document.getElementById("qr-modal");
+    const qrCloseButton = document.getElementById("qr-close-button");
+    const qrImage = document.getElementById("qr-image");
+    const qrStatus = document.getElementById("qr-status");
+    const qrUrl = document.getElementById("qr-url");
+    const qrLink = document.getElementById("qr-link");
+    const qrCopyButton = document.getElementById("qr-copy-button");
+    let syncTimer = null;
+    let lastSharedState = "";
+    let isComposingTitle = false;
+    let mobilePreviewUrl = "";
+
+    function getNumberValue(input, fallback) {
+      const value = Number(input.value);
+      return Number.isFinite(value) && value > 0 ? value : fallback;
+    }
+
+    function getVisibleCharCount(text) {
+      return text.replace(/\n/g, "").length;
+    }
+
+    function normalizeTitleText(text) {
+      return text.replace(/\r\n/g, "\n").replace(/\u00a0/g, " ");
+    }
+
+    function getEditableTitleText() {
+      return normalizeTitleText(pageTitle.innerText || "");
+    }
+
+    function getPresetValue(control, fallback) {
+      const value = control.dataset.value || fallback;
+      if (value === "custom") {
+        return getCustomFontPreset(control);
+      }
+      return FONT_PRESETS[value] || FONT_PRESETS[fallback];
+    }
+
+    function getShrinkLevels() {
+      const value = Number(shrinkLevels.value);
+      return Number.isFinite(value) && value >= 0 ? value : 2;
+    }
+
+    function getCustomLineHeight(fontSize) {
+      const presetValues = Object.values(FONT_PRESETS);
+      const matchedPreset = presetValues.find((item) => item.fontSize === fontSize);
+      if (matchedPreset) {
+        return matchedPreset.lineHeight;
+      }
+      return Math.round(fontSize * 1.4);
+    }
+
+    function getCustomFontPreset(control) {
+      const input = control.id === "font-size-base"
+        ? fontSizeBaseCustomInput
+        : control.id === "font-size-mid"
+          ? fontSizeMidCustomInput
+          : fontSizeMinCustomInput;
+      const fontSize = Math.max(1, Math.round(Number(input.value) || 1));
+      const lineHeight = getCustomLineHeight(fontSize);
+      return { fontSize, lineHeight };
+    }
+
+    function buildQrImageUrl(url) {
+      return "https://api.qrserver.com/v1/create-qr-code/?size=240x240&data=" + encodeURIComponent(url);
+    }
+
+    function getFallbackMobilePreviewUrl() {
+      const hostname = window.location.hostname;
+      if (!hostname || hostname === "localhost" || hostname === "127.0.0.1" || hostname === "0.0.0.0") {
+        return "";
+      }
+      return window.location.origin + "/mobile-preview.html";
+    }
+
+    function setMobilePreviewInfo(url, statusText) {
+      mobilePreviewUrl = url;
+      qrStatus.textContent = statusText;
+      qrUrl.textContent = url || "未获取到可供手机访问的地址";
+      qrLink.href = url || "./mobile-preview.html";
+      qrCopyButton.disabled = !url;
+
+      if (!url) {
+        qrImage.hidden = true;
+        qrImage.removeAttribute("src");
+        return;
+      }
+
+      qrImage.hidden = false;
+      qrImage.src = buildQrImageUrl(url);
+    }
+
+    async function loadMobilePreviewUrl() {
+      setMobilePreviewInfo("", "正在生成二维码...");
+      try {
+        const response = await fetch(MOBILE_PREVIEW_URL_ENDPOINT, { cache: "no-store" });
+        if (!response.ok) {
+          throw new Error("fetch mobile preview url failed");
+        }
+        const result = await response.json();
+        const url = result.mobilePreviewUrl || getFallbackMobilePreviewUrl();
+        if (!url) {
+          throw new Error("no mobile preview url");
+        }
+        setMobilePreviewInfo(url, "手机扫码后可直接实时预览");
+      } catch (error) {
+        const fallbackUrl = getFallbackMobilePreviewUrl();
+        if (fallbackUrl) {
+          setMobilePreviewInfo(fallbackUrl, "当前使用页面地址生成二维码");
+          return;
+        }
+        setMobilePreviewInfo("", "未获取到局域网地址，请确认电脑和手机在同一网络");
+      }
+    }
+
+    function openMobilePreviewModal() {
+      qrModal.hidden = false;
+      window.requestAnimationFrame(() => {
+        qrModal.classList.add("is-open");
+      });
+      loadMobilePreviewUrl();
+    }
+
+    function closeMobilePreviewModal() {
+      qrModal.classList.remove("is-open");
+      window.setTimeout(() => {
+        if (!qrModal.classList.contains("is-open")) {
+          qrModal.hidden = true;
+        }
+      }, 180);
+    }
+
+    function syncCustomFontPanel(control) {
+      const panel = control.id === "font-size-base"
+        ? fontSizeBaseCustomPanel
+        : control.id === "font-size-mid"
+          ? fontSizeMidCustomPanel
+          : fontSizeMinCustomPanel;
+      const input = control.id === "font-size-base"
+        ? fontSizeBaseCustomInput
+        : control.id === "font-size-mid"
+          ? fontSizeMidCustomInput
+          : fontSizeMinCustomInput;
+      const hint = control.id === "font-size-base"
+        ? fontSizeBaseCustomHint
+        : control.id === "font-size-mid"
+          ? fontSizeMidCustomHint
+          : fontSizeMinCustomHint;
+      const valueElement = control.querySelector(".custom-select-value");
+      const isCustom = (control.dataset.value || "") === "custom";
+      const fontSize = Math.max(1, Math.round(Number(input.value) || 1));
+      const lineHeight = getCustomLineHeight(fontSize);
+
+      input.value = String(fontSize);
+      panel.hidden = !isCustom;
+      hint.textContent = "自动行高：" + lineHeight + "px";
+
+      if (isCustom) {
+        valueElement.textContent = "自定义 " + fontSize;
+      }
+    }
+
+    function syncShrinkPanels(levels, mode) {
+      fontLevel1Panel.hidden = levels < 1;
+      fontLevel2Panel.hidden = levels < 2;
+      charThreshold2.parentElement.hidden = levels < 2;
+      lineThreshold2.parentElement.hidden = levels < 2;
+      charThreshold1.parentElement.hidden = levels < 1;
+      lineThreshold1.parentElement.hidden = levels < 1;
+      charThreshold1.disabled = levels < 1;
+      lineThreshold1.disabled = levels < 1;
+      charThreshold2.disabled = levels < 2;
+      lineThreshold2.disabled = levels < 2;
+      panelChar.hidden = mode !== "char" || levels < 1;
+      panelLine.hidden = mode !== "line" || levels < 1;
+      shrinkLevelsValue.textContent = SHRINK_LEVEL_LABELS[levels] || "2档";
+    }
+
+    function applyTitleStyle(preset) {
+      pageTitle.style.fontSize = preset.fontSize + "px";
+      pageTitle.style.lineHeight = preset.lineHeight + "px";
+      return preset.lineHeight;
+    }
+
+    function measureLines(preset) {
+      const lineHeight = applyTitleStyle(preset);
+      return Math.max(1, Math.round(pageTitle.scrollHeight / lineHeight));
+    }
+
+    function getSelectedMode() {
+      const checkedInput = document.querySelector('input[name="control-mode"]:checked');
+      return checkedInput ? checkedInput.value : "char";
+    }
+
+    function syncModePanels(mode) {
+      const isCharMode = mode === "char";
+      tabChar.classList.toggle("active", isCharMode);
+      tabLine.classList.toggle("active", !isCharMode);
+      tabChar.setAttribute("aria-selected", String(isCharMode));
+      tabLine.setAttribute("aria-selected", String(!isCharMode));
+    }
+
+    function bindCustomSelect(selectElement) {
+      const valueElement = selectElement.querySelector(".custom-select-value");
+      const options = selectElement.querySelectorAll(".custom-select-option");
+
+      options.forEach((option) => {
+        option.addEventListener("click", () => {
+          selectElement.dataset.value = option.dataset.value || "";
+          options.forEach((item) => item.classList.remove("is-selected"));
+          option.classList.add("is-selected");
+          if (option.dataset.value !== "custom") {
+            valueElement.textContent = option.dataset.summary || option.textContent || "";
+          }
+          selectElement.removeAttribute("open");
+          syncCustomFontPanel(selectElement);
+          updatePreview("panel");
+        });
+      });
+    }
+
+    function buildSharedState(titleText, mode, maxShrinkLevels, thresholds, fontPresets, appliedPreset) {
+      return {
+        titleText,
+        mode,
+        maxShrinkLevels,
+        thresholds,
+        fontSelections: {
+          base: fontSizeBase.dataset.value || "32-48",
+          mid: fontSizeMid.dataset.value || "28-40",
+          min: fontSizeMin.dataset.value || "22-30",
+          baseCustom: Number(fontSizeBaseCustomInput.value) || 32,
+          midCustom: Number(fontSizeMidCustomInput.value) || 28,
+          minCustom: Number(fontSizeMinCustomInput.value) || 19
+        },
+        appliedPreset,
+        updatedAt: Date.now()
+      };
+    }
+
+    function queueSharedStateSync(sharedState) {
+      const serializedState = JSON.stringify(sharedState);
+      if (serializedState === lastSharedState) {
+        return;
+      }
+
+      lastSharedState = serializedState;
+      window.clearTimeout(syncTimer);
+      syncTimer = window.setTimeout(() => {
+        fetch(STATE_ENDPOINT, {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: serializedState
+        }).catch(() => {});
+      }, 120);
+    }
+
+    function updatePreview(source = "panel") {
+      const titleText = getEditableTitleText();
+      const mode = getSelectedMode();
+      const maxShrinkLevels = getShrinkLevels();
+      const thresholds = {
+        first: mode === "char" ? getNumberValue(charThreshold1, 30) : getNumberValue(lineThreshold1, 3),
+        second: mode === "char" ? getNumberValue(charThreshold2, 50) : getNumberValue(lineThreshold2, 5)
+      };
+      const fontPresets = {
+        base: getPresetValue(fontSizeBase, "32-48"),
+        mid: getPresetValue(fontSizeMid, "28-40"),
+        min: getPresetValue(fontSizeMin, "22-30")
+      };
+
+      syncModePanels(mode);
+      syncShrinkPanels(maxShrinkLevels, mode);
+      syncCustomFontPanel(fontSizeBase);
+      syncCustomFontPanel(fontSizeMid);
+      syncCustomFontPanel(fontSizeMin);
+
+      let appliedPreset = fontPresets.base;
+
+      if (maxShrinkLevels === 0) {
+        appliedPreset = fontPresets.base;
+      } else if (mode === "char") {
+        const totalChars = getVisibleCharCount(titleText);
+
+        if (maxShrinkLevels >= 2 && totalChars > thresholds.second) {
+          appliedPreset = fontPresets.min;
+        } else if (maxShrinkLevels >= 1 && totalChars > thresholds.first) {
+          appliedPreset = fontPresets.mid;
+        }
+      } else {
+        const baseLines = measureLines(fontPresets.base);
+
+        if (maxShrinkLevels >= 1 && baseLines > thresholds.first) {
+          appliedPreset = fontPresets.mid;
+        }
+
+        const currentLines = measureLines(appliedPreset);
+        if (maxShrinkLevels >= 2 && appliedPreset === fontPresets.mid && currentLines > thresholds.second) {
+          appliedPreset = fontPresets.min;
+        }
+      }
+
+      measureLines(appliedPreset);
+      queueSharedStateSync(buildSharedState(titleText, mode, maxShrinkLevels, thresholds, fontPresets, appliedPreset));
+    }
+
+    mobilePreviewButton.addEventListener("click", openMobilePreviewModal);
+    qrCloseButton.addEventListener("click", closeMobilePreviewModal);
+    qrModal.addEventListener("click", (event) => {
+      if (event.target === qrModal) {
+        closeMobilePreviewModal();
+      }
+    });
+    window.addEventListener("keydown", (event) => {
+      if (event.key === "Escape" && qrModal.classList.contains("is-open")) {
+        closeMobilePreviewModal();
+      }
+    });
+    qrCopyButton.addEventListener("click", async () => {
+      if (!mobilePreviewUrl) {
+        return;
+      }
+      try {
+        await navigator.clipboard.writeText(mobilePreviewUrl);
+        qrCopyButton.textContent = "已复制";
+        qrCopyButton.classList.add("is-success");
+        window.setTimeout(() => {
+          qrCopyButton.textContent = "复制链接";
+          qrCopyButton.classList.remove("is-success");
+        }, 1600);
+      } catch (error) {
+        qrStatus.textContent = "复制失败，请手动复制下方链接";
+      }
+    });
+
+    [
+      charThreshold1,
+      charThreshold2,
+      lineThreshold1,
+      lineThreshold2,
+      shrinkLevels,
+      fontSizeBase,
+      fontSizeMid,
+      fontSizeMin
+    ].forEach((input) => {
+      if (input.matches(".custom-select")) {
+        bindCustomSelect(input);
+      } else {
+        input.addEventListener("input", () => updatePreview("panel"));
+        input.addEventListener("change", () => updatePreview("panel"));
+      }
+    });
+
+    [fontSizeBaseCustomInput, fontSizeMidCustomInput, fontSizeMinCustomInput].forEach((input) => {
+      input.addEventListener("input", () => updatePreview("panel"));
+      input.addEventListener("change", () => updatePreview("panel"));
+    });
+
+    modeInputs.forEach((input) => {
+      input.addEventListener("change", () => updatePreview("panel"));
+    });
+
+    pageTitle.addEventListener("input", (event) => {
+      if (isComposingTitle || event.isComposing) {
+        return;
+      }
+      updatePreview("title");
+    });
+    pageTitle.addEventListener("focus", () => updatePreview("title"));
+    pageTitle.addEventListener("compositionstart", () => {
+      isComposingTitle = true;
+    });
+    pageTitle.addEventListener("compositionend", () => {
+      isComposingTitle = false;
+      updatePreview("title");
+    });
+
+    updatePreview("title");
+  </script>
+</body>
+</html>
