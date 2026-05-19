@@ -929,16 +929,17 @@
 
     async function loadMobilePreviewUrl() {
       setMobilePreviewInfo("", "正在生成二维码...");
+      const pageUrl = getMobilePreviewUrl();
+      if (pageUrl) {
+        setMobilePreviewInfo(pageUrl, "手机扫码即可打开预览页");
+        return;
+      }
       try {
         const response = await fetch(MOBILE_PREVIEW_URL_ENDPOINT, { cache: "no-store" });
-        if (!response.ok) {
-          throw new Error("fetch mobile preview url failed");
-        }
+        if (!response.ok) throw new Error("fetch mobile preview url failed");
         const result = await response.json();
         const url = result.mobilePreviewUrl || getFallbackMobilePreviewUrl();
-        if (!url) {
-          throw new Error("no mobile preview url");
-        }
+        if (!url) throw new Error("no mobile preview url");
         setMobilePreviewInfo(url, "手机扫码后可直接实时预览");
       } catch (error) {
         const fallbackUrl = getFallbackMobilePreviewUrl();
@@ -948,6 +949,14 @@
         }
         setMobilePreviewInfo("", "未获取到局域网地址，请确认电脑和手机在同一网络");
       }
+    }
+
+    function getMobilePreviewUrl() {
+      const origin = window.location.origin;
+      const pathname = window.location.pathname;
+      if (!origin || origin === "null") return "";
+      const base = pathname.replace(/\/[^/]*$/, "/");
+      return origin + base + "mobile-preview.html";
     }
 
     function openMobilePreviewModal() {

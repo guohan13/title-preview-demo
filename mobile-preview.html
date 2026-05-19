@@ -309,8 +309,39 @@
       queueStateSync();
     });
 
-    fetchState();
-    window.setInterval(fetchState, 700);
+    const DEFAULT_STATE = {
+      titleText: "智能纪要：文档编辑及环境配置问题讨论 2026年5月13日",
+      mode: "char",
+      maxShrinkLevels: 1,
+      thresholds: { first: 20, second: 50 },
+      fontSelections: { base: "32-48", baseCustom: 32, mid: "28-40", midCustom: 28, min: "22-30", minCustom: 19 },
+      appliedPreset: { fontSize: 32, lineHeight: 48 },
+      updatedAt: 0
+    };
+
+    let hasBackend = true;
+    let fetchFailCount = 0;
+
+    async function tryFetchState() {
+      if (!hasBackend) return;
+      try {
+        const response = await fetch(STATE_ENDPOINT, { cache: "no-store" });
+        if (!response.ok) throw new Error("fetch state failed");
+        const state = await response.json();
+        fetchFailCount = 0;
+        applyState(state);
+      } catch (error) {
+        fetchFailCount++;
+        if (fetchFailCount >= 3 && !lastUpdatedAt) {
+          hasBackend = false;
+          applyState(DEFAULT_STATE);
+          syncStatus.textContent = "独立预览模式";
+        }
+      }
+    }
+
+    tryFetchState();
+    window.setInterval(tryFetchState, 700);
   </script>
 </body>
 </html>
